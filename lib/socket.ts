@@ -4,6 +4,7 @@ import {
   Playlist,
   RoomState,
   UserState,
+  ChatMessage,
 } from "./types"
 import io, { Socket } from "socket.io-client"
 
@@ -11,6 +12,10 @@ export interface ServerToClientEvents {
   playlistUpdate: (playlist: Playlist) => void
   userUpdates: (users: UserState[]) => void
   update: (room: RoomState) => void
+
+  // Chat events
+  chatNew: (msg: ChatMessage) => void
+  chatHistory: (msgs: ChatMessage[]) => void
 }
 
 export interface ClientToServerEvents {
@@ -31,6 +36,9 @@ export interface ClientToServerEvents {
   playEnded: () => void
   fetch: () => void
   error: () => void
+
+  // Chat: client -> server
+  chatMessage: (text: string) => void
 }
 
 export function playItemFromPlaylist(
