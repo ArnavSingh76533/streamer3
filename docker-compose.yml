@@ -8,12 +8,3 @@ services:
     environment:
       SITE_NAME: ${SITE_NAME}
       PUBLIC_DOMAIN: ${PUBLIC_DOMAIN}
-
-      # provide your own url to your own redis setup
-      REDIS_URL: ${REDIS_URL}
-    depends_on:
-      - redis
-
-  redis:
-    image: redis
-    restart: unless-stopped
