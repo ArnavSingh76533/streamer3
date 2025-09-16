@@ -31,10 +31,10 @@ ENV PUBLIC_DOMAIN="https://shivam413-Streamer.hf.space"
 ENV PORT=7860
 EXPOSE 7860
 
-LABEL org.opencontainers.image.url="https://web-syncplay.de" \
+LABEL org.opencontainers.image.url="https://shivam413-Streamer.hf.space" \
       org.opencontainers.image.description="Watch videos or play music in sync with your friends" \
       org.opencontainers.image.title="Web-SyncPlay" \
-      maintainer="Yasamato <https://github.com/Yasamato>"
+      maintainer="charlie <t.me/yucant>"
 
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001 && \
@@ -47,6 +47,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Ensure Next.js cache directory exists and is writable
+RUN mkdir -p /app/.next/cache && chown -R nextjs:nodejs /app/.next
 
 USER nextjs
 
