@@ -8,6 +8,10 @@ type YtResult = {
   thumbnails?: { url: string; width?: number; height?: number }[]
 }
 
+function normalizeQueryParam(v: string | string[] | undefined): string | undefined {
+  return Array.isArray(v) ? v[0] : v
+}
+
 function limitInt(v: string | number | undefined, def = 8, min = 1, max = 20) {
   const n = Number(v)
   if (!Number.isFinite(n)) return def
@@ -30,7 +34,7 @@ async function searchYouTubeAPI(q: string, limit: number, key: string): Promise<
   url.searchParams.set("q", q)
   url.searchParams.set("key", key)
 
-  const r = await fetch(url.toString(), { next: { revalidate: 300 } })
+  const r = await fetch(url.toString())
   if (!r.ok) throw new Error(`ytapi_http_${r.status}`)
   const data = await r.json()
   const items: any[] = Array.isArray(data?.items) ? data.items : []
@@ -50,7 +54,7 @@ async function searchYouTubeAPI(q: string, limit: number, key: string): Promise<
 }
 
 async function searchPipedServer(q: string, limit: number): Promise<YtResult[]> {
-  // Try a few public instances; server-side DNS might still fail depending on your host.
+  // Try a few public instances
   const instances = [
     "https://pipedapi.kavin.rocks",
     "https://piped.video",
@@ -61,7 +65,7 @@ async function searchPipedServer(q: string, limit: number): Promise<YtResult[]> 
     try {
       const url = new URL("/search", base)
       url.searchParams.set("q", q)
-      const r = await fetch(url.toString(), { cache: "no-store" })
+      const r = await fetch(url.toString())
       if (!r.ok) continue
       const data = await r.json()
       const items: any[] = Array.isArray(data?.items) ? data.items : []
@@ -87,9 +91,12 @@ async function searchPipedServer(q: string, limit: number): Promise<YtResult[]> 
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const q = (req.query.q || "").toString().trim()
+  const qParam = normalizeQueryParam(req.query.q)
+  const q = (qParam || "").toString().trim()
   if (!q) return res.status(400).json({ error: "Missing q" })
-  const limit = limitInt(req.query.limit, 8, 1, 20)
+
+  const limitParam = normalizeQueryParam(req.query.limit)
+  const limit = limitInt(limitParam, 8, 1, 20)
 
   // Edge cache (if available)
   res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate")
@@ -108,7 +115,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const piped = await searchPipedServer(q, limit)
     if (piped.length) return res.json({ results: piped, source: "piped" })
 
-    return res.status(502).json({ error: "no_results", detail: "All server-side search methods failed or returned empty." })
+    return res
+      .status(502)
+      .json({ error: "no_results", detail: "All server-side search methods failed or returned empty." })
   } catch (err: any) {
     console.error("search endpoint failed", err)
     return res.status(500).json({
