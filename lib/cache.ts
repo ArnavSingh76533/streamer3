@@ -1,71 +1,51 @@
-import { createClient } from "redis"
-import { getRedisURL } from "./env"
 import { RoomState } from "./types"
 
-const client = createClient({
-  url: getRedisURL(),
-})
+// In-memory stores
+const rooms = new Map<string, RoomState>()
+let userCount = 0
 
-;(async () => {
-  await client.connect()
-})()
-
-client.on("reconnecting", () => {
-  console.log("Trying to reconnect to redis server ...")
-})
-client.on("error", (error) => {
-  console.error("Failed to contact redis server due to:", error)
-})
-
-export const getRoom = async (roomId: string) => {
-  const data = await client.get("room:" + roomId)
-  if (data === null) {
-    return data
-  }
-
-  return JSON.parse(data) as RoomState
+export const getRoom = async (roomId: string): Promise<RoomState | null> => {
+  return rooms.get(roomId) ?? null
 }
 
-export const roomExists = async (roomId: string) => {
-  return await client.exists("room:" + roomId)
+export const roomExists = async (roomId: string): Promise<number> => {
+  // Keep Redis-like return type (0/1) for compatibility
+  return rooms.has(roomId) ? 1 : 0
 }
 
-export const setRoom = async (roomId: string, data: RoomState) => {
-  if (!(await client.sIsMember("rooms", roomId))) {
-    await client.sAdd("rooms", roomId)
-  }
-  return await client.set("room:" + roomId, JSON.stringify(data))
+export const setRoom = async (roomId: string, data: RoomState): Promise<"OK"> => {
+  rooms.set(roomId, data)
+  return "OK"
 }
 
-export const deleteRoom = async (roomId: string) => {
-  await client.sRem("rooms", roomId)
-  return await client.del("room:" + roomId)
+export const deleteRoom = async (roomId: string): Promise<number> => {
+  return rooms.delete(roomId) ? 1 : 0
 }
 
-export const listRooms = async () => {
-  return await client.sMembers("rooms")
+export const listRooms = async (): Promise<string[]> => {
+  return Array.from(rooms.keys())
 }
 
-export const countRooms = async () => {
-  return await client.sCard("rooms")
+export const countRooms = async (): Promise<number> => {
+  return rooms.size
 }
 
-export const countUsers = async () => {
-  const count = await client.get("userCount")
-  if (count === null) {
-    return 0
-  }
-  return parseInt(count)
+export const countUsers = async (): Promise<number> => {
+  return userCount
 }
 
-export const incUsers = async () => {
-  return await client.incr("userCount")
+export const incUsers = async (): Promise<number> => {
+  userCount += 1
+  return userCount
 }
 
-export const decUsers = async () => {
-  return await client.decr("userCount")
+export const decUsers = async (): Promise<number> => {
+  userCount = Math.max(0, userCount - 1)
+  return userCount
 }
 
-export const wipeCache = async () => {
-  return await client.flushAll()
+export const wipeCache = async (): Promise<"OK"> => {
+  rooms.clear()
+  userCount = 0
+  return "OK"
 }
