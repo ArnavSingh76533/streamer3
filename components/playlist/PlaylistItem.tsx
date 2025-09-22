@@ -1,5 +1,5 @@
 import React, { FC, useEffect, useState, useRef } from "react"
-import { Draggable as _Draggable, DraggableProps } from "react-beautiful-dnd"
+import { Draggable } from "@hello-pangea/dnd"
 import classNames from "classnames"
 import { MediaElement } from "../../lib/types"
 import NewTabLink from "../action/NewTabLink"
@@ -11,9 +11,6 @@ import ControlButton from "../input/ControlButton"
 import IconPlay from "../icon/IconPlay"
 import IconDisk from "../icon/IconDisk"
 import { getDomain } from "../../lib/utils"
-
-// HACK: this fixes type incompatibility
-const Draggable = _Draggable as unknown as FC<DraggableProps>
 
 interface Props {
   playing: boolean
@@ -115,23 +112,18 @@ const PlaylistItem: FC<Props> = ({
               }}
               interaction={() => {}}
             >
-              {playing ? (
-                <IconDisk
-                  className={"animate-spin animate-pulse text-purple-700"}
-                />
-              ) : (
-                <IconPlay
-                  className={"text-primary-900 hover:text-primary-900"}
-                />
-              )}
+              <IconPlay />
             </ControlButton>
-            <NewTabLink
-              href={item.src[0].src}
-              className={"flex flex-row gap-1"}
-            >
-              <div className={"line-clamp-2"}>{getDomain(item.src[0].src)}</div>
-              <IconNewTab className={"shrink-0"} />
-            </NewTabLink>
+            <div className={"ml-auto flex flex-row items-center gap-2"}>
+              <IconDisk />
+              <NewTabLink
+                className={"text-sm"}
+                href={item.src[0].src}
+              >
+                <span>{getDomain(item.src[0].src)}</span>
+                <IconNewTab />
+              </NewTabLink>
+            </div>
           </div>
         </div>
       )}
