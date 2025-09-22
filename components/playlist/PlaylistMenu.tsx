@@ -1,6 +1,6 @@
 import { FC, useEffect, useRef, useState } from "react"
 import { MediaElement, Playlist, RoomState } from "../../lib/types"
-import { DragDropContext, Droppable } from "@hello-pangea/dnd"
+import { DragDropContext as _DragDropContext, Droppable as _Droppable, DragDropContextProps, DroppableProps } from "react-beautiful-dnd"
 import classNames from "classnames"
 import { Socket } from "socket.io-client"
 import {
@@ -12,6 +12,10 @@ import ControlButton from "../input/ControlButton"
 import IconChevron from "../icon/IconChevron"
 import PlaylistItem from "./PlaylistItem"
 import InputUrl from "../input/InputUrl"
+
+// HACK: this fixes type incompatibility
+const DragDropContext = _DragDropContext as unknown as FC<DragDropContextProps>
+const Droppable = _Droppable as unknown as FC<DroppableProps>
 
 interface Props {
   socket: Socket<ServerToClientEvents, ClientToServerEvents>
@@ -105,56 +109,70 @@ const PlaylistMenu: FC<Props> = ({ socket }) => {
               )
 
               if (
-                newPlaylist.currentIndex === result.source.index ||
-                newPlaylist.currentIndex === result.destination.index
+                playlist.currentIndex > result.source.index &&
+                playlist.currentIndex < result.destination.index
               ) {
-                // keep currentIndex pointing to the same item after reorder
-                const movedFrom = result.source.index
-                const movedTo = result.destination.index
-                if (newPlaylist.currentIndex === movedFrom) {
-                  newPlaylist.currentIndex = movedTo
-                } else if (
-                  movedFrom < newPlaylist.currentIndex &&
-                  movedTo >= newPlaylist.currentIndex
-                ) {
-                  newPlaylist.currentIndex -= 1
-                } else if (
-                  movedFrom > newPlaylist.currentIndex &&
-                  movedTo <= newPlaylist.currentIndex
-                ) {
-                  newPlaylist.currentIndex += 1
-                }
+                newPlaylist.currentIndex--
+              } else if (
+                playlist.currentIndex < result.source.index &&
+                playlist.currentIndex > result.destination.index
+              ) {
+                newPlaylist.currentIndex++
+              } else if (playlist.currentIndex === result.source.index) {
+                newPlaylist.currentIndex = result.destination.index
               }
 
+              console.log("Playlist updated to:", newPlaylist)
               socket.emit("updatePlaylist", newPlaylist)
             }}
           >
             <Droppable droppableId={"playlistMenu"}>
-              {(provided) => (
-                <div ref={provided.innerRef} {...provided.droppableProps} className={"flex flex-col gap-1"}>
-                  {playlist.items.map((item, index) => (
-                    <PlaylistItem
-                      key={item.src[0].src + "-" + index}
-                      item={item}
-                      index={index}
-                      updateTitle={(title: string) => {
-                        const newPlaylist: Playlist = JSON.parse(JSON.stringify(playlist))
-                        newPlaylist.items[index].title = title
-                        socket.emit("updatePlaylist", newPlaylist)
-                      }}
-                      deleteItem={(i: number) => {
-                        const newPlaylist: Playlist = JSON.parse(JSON.stringify(playlist))
-                        newPlaylist.items.splice(i, 1)
-                        if (newPlaylist.currentIndex >= newPlaylist.items.length) {
-                          newPlaylist.currentIndex = newPlaylist.items.length - 1
-                        }
-                        socket.emit("updatePlaylist", newPlaylist)
-                      }}
-                      playing={playlist.currentIndex === index}
-                      play={() => playItemFromPlaylist(socket, index)}
-                    />
-                  ))}
-                  {provided.placeholder}
+              {(provided, snapshot) => (
+                <div
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  className={classNames(
+                    "flex flex-col rounded gap-1",
+                    snapshot.isDraggingOver && "bg-dark-800"
+                  )}
+                >
+                  <>
+                    {playlist.items.map((item, index) => (
+                      <PlaylistItem
+                        key={item.src[0].src + "-" + index}
+                        playing={playlist.currentIndex === index}
+                        item={item}
+                        index={index}
+                        deleteItem={(index) => {
+                          if (index < 0 || index >= playlist.items.length) {
+                            return
+                          }
+
+                          const newPlaylist: Playlist = JSON.parse(
+                            JSON.stringify(playlist)
+                          )
+                          newPlaylist.items.splice(index, 1)
+                          if (newPlaylist.currentIndex === index) {
+                            newPlaylist.currentIndex = -1
+                          } else if (newPlaylist.currentIndex > index) {
+                            newPlaylist.currentIndex--
+                          }
+                          socket.emit("updatePlaylist", newPlaylist)
+                        }}
+                        updateTitle={(newTitle) => {
+                          const newPlaylist: Playlist = JSON.parse(
+                            JSON.stringify(playlist)
+                          )
+                          newPlaylist.items[index].title = newTitle
+                          socket.emit("updatePlaylist", newPlaylist)
+                        }}
+                        play={() => {
+                          playItemFromPlaylist(socket, playlist, index)
+                        }}
+                      />
+                    ))}
+                    {provided.placeholder}
+                  </>
                 </div>
               )}
             </Droppable>
