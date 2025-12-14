@@ -11,8 +11,19 @@ import {
   setRoom,
 } from "../../lib/cache"
 import { createNewRoom, createNewUser, updateLastSync } from "../../lib/room"
-import { Playlist, RoomState, UserState, ChatMessage } from "../../lib/types"
+import { Playlist, RoomState, UserState, ChatMessage, MediaElement } from "../../lib/types"
 import { isUrl } from "../../lib/utils"
+import { getDefaultImg, getDefaultSrc } from "../../lib/env"
+
+/**
+ * Helper function to create a MediaElement from a URL
+ * @param url - The media URL to wrap
+ * @returns MediaElement with a single source and no subtitles
+ */
+const createMediaElement = (url: string): MediaElement => ({
+  src: [{ src: url, resolution: "" }],
+  sub: [],
+})
 
 const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
   // @ts-ignore
@@ -299,13 +310,28 @@ const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
             return
           }
 
-          room.targetState.playing = {
-            src: [{ src: url, resolution: "" }],
-            sub: [],
+          // Remove default image/video from playlist if it's the only item
+          const defaultImg = getDefaultImg()
+          const defaultMedia = defaultImg || getDefaultSrc()
+          
+          if (room.targetState.playlist.items.length === 1) {
+            const firstItem = room.targetState.playlist.items[0]
+            if (firstItem?.src?.[0]?.src === defaultMedia) {
+              // Remove the default item
+              room.targetState.playlist.items = []
+              log("Removed default media from playlist")
+            }
           }
-          room.targetState.playlist.currentIndex = -1
+
+          // Add new video to playlist at position 0
+          const newMedia = createMediaElement(url)
+          room.targetState.playlist.items.unshift(newMedia)
+          
+          room.targetState.playing = newMedia
+          room.targetState.playlist.currentIndex = 0
           room.targetState.progress = 0
           room.targetState.lastSync = new Date().getTime() / 1000
+          room.targetState.paused = false
           await broadcast(room)
         })
 
@@ -320,10 +346,7 @@ const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
           if (!isUrl(url)) return log("addToPlaylist invalid url", url)
           log("add to playlist", url)
 
-          room.targetState.playlist.items.push({
-            src: [{ src: url, resolution: "" }],
-            sub: [],
-          })
+          room.targetState.playlist.items.push(createMediaElement(url))
 
           await broadcast(room)
         })

@@ -1,0 +1,3 @@
+This is a placeholder for notification sound.
+To add a real notification sound, place an MP3 file here named notification.mp3
+For now, the code will try to play it but gracefully handle if not found.

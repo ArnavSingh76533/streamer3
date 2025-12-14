@@ -1,6 +1,6 @@
 import { PlayerState, RoomState } from "./types"
 import { getRandomName, getTargetTime } from "./utils"
-import { getDefaultSrc } from "./env"
+import { getDefaultSrc, getDefaultImg } from "./env"
 import { getRoom, setRoom } from "./cache"
 
 export const updateLastSync = (room: RoomState) => {
@@ -52,6 +52,11 @@ export const createNewUser = async (roomId: string, socketId: string) => {
 }
 
 export const createNewRoom = async (roomId: string, socketId: string) => {
+  // Use default image if available, otherwise use default video
+  const defaultImg = getDefaultImg()
+  const defaultMedia = defaultImg || getDefaultSrc()
+  const isImage = !!defaultImg
+  
   await setRoom(roomId, {
     serverTime: 0,
     commandHistory: [],
@@ -61,17 +66,19 @@ export const createNewRoom = async (roomId: string, socketId: string) => {
       playlist: {
         items: [
           {
-            src: [{ src: getDefaultSrc(), resolution: "" }],
+            src: [{ src: defaultMedia, resolution: "" }],
             sub: [],
+            title: isImage ? "Welcome" : undefined,
           },
         ],
         currentIndex: 0,
       },
       playing: {
-        src: [{ src: getDefaultSrc(), resolution: "" }],
+        src: [{ src: defaultMedia, resolution: "" }],
         sub: [],
+        title: isImage ? "Welcome" : undefined,
       },
-      paused: false,
+      paused: isImage, // Pause by default if it's an image
       progress: 0,
       playbackRate: 1,
       loop: false,

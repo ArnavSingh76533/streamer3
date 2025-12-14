@@ -40,3 +40,10 @@ export function getDefaultSrc(): string {
   // console.warn("ENV 'DEFAULT_SRC' has no value, using no src")
   return "https://youtu.be/c-FKlE3_kHo"
 }
+
+export function getDefaultImg(): string | null {
+  if ("DEFAULT_IMG" in process.env) {
+    return <string>process.env.DEFAULT_IMG
+  }
+  return null
+}

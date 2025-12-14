@@ -110,6 +110,8 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
     resolution: "",
   })
   const [currentSub, setCurrentSub] = useState<Subtitle>({ src: "", lang: "" })
+  const [ownerId, setOwnerId] = useState<string>("")
+  const [isOwner, setIsOwner] = useState(false)
 
   const [error, setError] = useState(null)
   const [ready, _setReady] = useState(false)
@@ -128,6 +130,8 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
   const [connected, setConnected] = useState(false)
   const [unmuted, setUnmuted] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
+  const [pipEnabled, setPipEnabled] = useState(false)
+  const [musicMode, setMusicMode] = useState(false)
   const fullscreenHandle = useFullScreenHandle()
   const player = useRef<ReactPlayer>(null)
 
@@ -193,6 +197,12 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
         setDeltaServerTime((room.serverTime - new Date().getTime()) / 1000)
       }
 
+      // Update owner info
+      if (room.ownerId !== ownerId) {
+        setOwnerId(room.ownerId)
+        setIsOwner(socket.id === room.ownerId)
+      }
+
       const update = room.targetState
       if (update.lastSync !== lastSyncRef.current) {
         _setLastSync(update.lastSync)
@@ -222,7 +232,7 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
         _setPlaylist(update.playlist)
       }
     })
-  }, [socket])
+  }, [socket, ownerId])
 
   useEffect(() => {
     if (ready) {
@@ -243,9 +253,22 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
         }
       }}
     >
+      {musicMode && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary-900 to-dark-900">
+          <div className="flex flex-col items-center gap-4 text-primary-300">
+            <svg className="w-32 h-32" fill="currentColor" viewBox="0 0 512 512">
+              <path d='M470.38 1.51L150.41 96A32 32 0 0 0 128 126.51v261.41A139 139 0 0 0 96 384c-53 0-96 28.66-96 64s43 64 96 64 96-28.66 96-64V214.32l256-75v184.61a138.4 138.4 0 0 0-32-3.93c-53 0-96 28.66-96 64s43 64 96 64 96-28.65 96-64V32a32 32 0 0 0-41.62-30.49z' />
+            </svg>
+            <div className="text-2xl font-semibold">Music Mode</div>
+            <div className="text-sm text-primary-400">Audio continues playing</div>
+          </div>
+        </div>
+      )}
       <ReactPlayer
         style={{
           maxHeight: fullscreen || fullHeight ? "100vh" : "calc(100vh - 210px)",
+          visibility: musicMode ? "hidden" : "visible",
+          height: musicMode ? "0px" : (fullscreen || fullHeight ? "100vh" : "calc((9 / 16) * 100vw)"),
         }}
         ref={player}
         width={"100%"}
@@ -265,7 +288,7 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
           },
         }}
         url={currentSrc.src}
-        pip={false}
+        pip={pipEnabled}
         playing={!paused}
         controls={false}
         loop={loop}
@@ -419,6 +442,11 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
         lastSync={lastSync}
         error={error}
         playAgain={() => socket?.emit("playAgain")}
+        isOwner={isOwner}
+        pipEnabled={pipEnabled}
+        setPipEnabled={setPipEnabled}
+        musicMode={musicMode}
+        setMusicMode={setMusicMode}
       />
 
       <div className={"absolute top-1 left-1 flex flex-col gap-1 p-1"}>
