@@ -27,7 +27,7 @@ const createMediaElement = (url: string): MediaElement => ({
 
 type RoomLogger = (...props: Parameters<typeof console.log>) => void
 
-const ROOM_EMPTY_TTL_MS = 60_000
+const ROOM_EMPTY_TTL_MS = 60_000 // 1 minute grace period before deleting empty rooms
 const roomDeletionTimers = new Map<
   string,
   { timer: ReturnType<typeof setTimeout>; token: symbol }
@@ -45,16 +45,14 @@ const scheduleRoomDeletion = (roomId: string, log: RoomLogger) => {
   cancelRoomDeletion(roomId)
   const token = Symbol(roomId)
   const timer = setTimeout(async () => {
+    const hasMatchingToken = () => roomDeletionTimers.get(roomId)?.token === token
     try {
-      const activeBefore = roomDeletionTimers.get(roomId)
-      if (!activeBefore || activeBefore.token !== token) {
+      if (!hasMatchingToken()) {
         return
       }
       const room = await getRoom(roomId)
-      const activeAfter = roomDeletionTimers.get(roomId)
       if (
-        !activeAfter ||
-        activeAfter.token !== token ||
+        !hasMatchingToken() ||
         room === null ||
         room.users.length !== 0
       ) {
