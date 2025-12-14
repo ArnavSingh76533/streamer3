@@ -39,7 +39,6 @@ export default function Index() {
         roomId.length >= 4 &&
         roomId.match(/^[a-z]{4,}$/)
       ) {
-        console.log("Generated new roomId:", roomId)
         // Navigate to room with name and visibility as query params
         await router.push({
           pathname: `/room/${roomId}`,
@@ -61,7 +60,8 @@ export default function Index() {
         onSubmit={(name, isPublic) => {
           setShowCreateRoomModal(false)
           handleCreateRoom(name, isPublic)
-        }} 
+        }}
+        onClose={() => setShowCreateRoomModal(false)}
       />
       <div className={"self-center flex justify-center items-center min-h-[70vh]"}>
         <div className="flex flex-col gap-6 max-w-4xl w-full m-8">

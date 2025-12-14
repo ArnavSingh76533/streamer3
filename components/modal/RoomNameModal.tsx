@@ -8,9 +8,10 @@ interface Props {
   show: boolean
   onSubmit: (name: string, isPublic: boolean) => void
   allowClose?: boolean // Allow closing the modal without submitting
+  onClose?: () => void // Callback when modal is closed
 }
 
-const RoomNameModal: FC<Props> = ({ show, onSubmit, allowClose = false }) => {
+const RoomNameModal: FC<Props> = ({ show, onSubmit, allowClose = false, onClose }) => {
   const [name, setName] = useState("")
   const [isPublic, setIsPublic] = useState(false)
   const [error, setError] = useState("")
@@ -38,11 +39,12 @@ const RoomNameModal: FC<Props> = ({ show, onSubmit, allowClose = false }) => {
       show={show} 
       hideCloseButtons={!allowClose}
       close={() => {
-        if (allowClose) {
+        if (allowClose && onClose) {
           // Reset form when closing
           setName("")
           setError("")
           setIsPublic(false)
+          onClose()
         }
       }}
     >

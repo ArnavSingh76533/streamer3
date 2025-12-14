@@ -47,7 +47,6 @@ const Room: FC<Props> = ({ id, initialName, initialIsPublic }) => {
           
           // If we have initial name/visibility from query params, set them immediately
           if (initialName && !hasSetName) {
-            console.log("Setting initial room name and visibility:", initialName, initialIsPublic)
             newSocket.emit("setRoomName", initialName)
             newSocket.emit("setRoomPublic", initialIsPublic || false)
             setHasSetName(true)
