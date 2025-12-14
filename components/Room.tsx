@@ -52,13 +52,26 @@ const Room: FC<Props> = ({ id }) => {
             
             if (setupData) {
               try {
-                const { name, isPublic } = JSON.parse(setupData)
-                // Store pending setup to be applied on first update
-                setPendingSetup({ name, isPublic })
-                // Clear the setup data
-                sessionStorage.removeItem(setupKey)
+                const parsed = JSON.parse(setupData)
+                // Validate structure before using
+                if (
+                  parsed && 
+                  typeof parsed === 'object' &&
+                  typeof parsed.name === 'string' &&
+                  typeof parsed.isPublic === 'boolean' &&
+                  parsed.name.trim().length > 0
+                ) {
+                  // Store pending setup to be applied on first update
+                  setPendingSetup({ name: parsed.name, isPublic: parsed.isPublic })
+                  // Clear the setup data
+                  sessionStorage.removeItem(setupKey)
+                } else {
+                  console.error("Invalid room setup data structure")
+                  sessionStorage.removeItem(setupKey)
+                }
               } catch (e) {
                 console.error("Failed to parse room setup data", e)
+                sessionStorage.removeItem(setupKey)
               }
             }
             setRoomSetupChecked(true)
@@ -75,9 +88,18 @@ const Room: FC<Props> = ({ id }) => {
             newSocket.emit("setRoomPublic", pendingSetup.isPublic)
             setHasSetName(true)
             setPendingSetup(null)
-          } else if (isRoomOwner && !room.ownerName && !hasSetName && roomSetupChecked && !pendingSetup) {
-            // Show modal if owner and no room name set (and no setup from sessionStorage)
-            setShowNameModal(true)
+          } else {
+            // Show modal if owner needs to set room name manually
+            const shouldShowModal = 
+              isRoomOwner && 
+              !room.ownerName && 
+              !hasSetName && 
+              roomSetupChecked && 
+              !pendingSetup
+            
+            if (shouldShowModal) {
+              setShowNameModal(true)
+            }
           }
         }
         
