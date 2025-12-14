@@ -19,13 +19,11 @@ import RoomNameModal from "./modal/RoomNameModal"
 
 interface Props {
   id: string
-  initialName?: string
-  initialIsPublic?: boolean
 }
 
 let connecting = false
 
-const Room: FC<Props> = ({ id, initialName, initialIsPublic }) => {
+const Room: FC<Props> = ({ id }) => {
   const [connected, setConnected] = useState(false)
   const [socket, setSocket] = useState<Socket<
     ServerToClientEvents,
@@ -34,6 +32,7 @@ const Room: FC<Props> = ({ id, initialName, initialIsPublic }) => {
   const [url, setUrl] = useState("")
   const [showNameModal, setShowNameModal] = useState(false)
   const [hasSetName, setHasSetName] = useState(false)
+  const [roomSetupChecked, setRoomSetupChecked] = useState(false)
 
   useEffect(() => {
     fetch("/api/socketio").finally(() => {
@@ -45,11 +44,25 @@ const Room: FC<Props> = ({ id, initialName, initialIsPublic }) => {
         const handleConnect = () => {
           setConnected(true)
           
-          // If we have initial name/visibility from query params, set them immediately
-          if (initialName && !hasSetName) {
-            newSocket.emit("setRoomName", initialName)
-            newSocket.emit("setRoomPublic", initialIsPublic || false)
-            setHasSetName(true)
+          // Check sessionStorage for room setup info (from front page creation)
+          if (!roomSetupChecked) {
+            const setupKey = `room-setup-${id}`
+            const setupData = sessionStorage.getItem(setupKey)
+            
+            if (setupData) {
+              try {
+                const { name, isPublic } = JSON.parse(setupData)
+                // Set room name and privacy immediately after connection
+                newSocket.emit("setRoomName", name)
+                newSocket.emit("setRoomPublic", isPublic)
+                setHasSetName(true)
+                // Clear the setup data
+                sessionStorage.removeItem(setupKey)
+              } catch (e) {
+                console.error("Failed to parse room setup data", e)
+              }
+            }
+            setRoomSetupChecked(true)
           }
         }
         
@@ -57,8 +70,8 @@ const Room: FC<Props> = ({ id, initialName, initialIsPublic }) => {
         const handleUpdate = (room: any) => {
           const isRoomOwner = newSocket.id === room.ownerId
           
-          // Show modal if owner and no room name set (and no initial name provided)
-          if (isRoomOwner && !room.ownerName && !hasSetName && !initialName) {
+          // Show modal if owner and no room name set (and no setup from sessionStorage)
+          if (isRoomOwner && !room.ownerName && !hasSetName && roomSetupChecked) {
             setShowNameModal(true)
           }
         }
@@ -77,7 +90,7 @@ const Room: FC<Props> = ({ id, initialName, initialIsPublic }) => {
         socket.disconnect()
       }
     }
-  }, [id, socket, hasSetName, initialName, initialIsPublic])
+  }, [id, socket, hasSetName, roomSetupChecked])
 
   const handleRoomSetup = (name: string, isPublic: boolean) => {
     if (socket) {
