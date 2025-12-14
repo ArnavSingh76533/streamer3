@@ -15,7 +15,11 @@ import { Playlist, RoomState, UserState, ChatMessage, MediaElement } from "../..
 import { isUrl } from "../../lib/utils"
 import { getDefaultImg, getDefaultSrc } from "../../lib/env"
 
-// Helper function to create a media element from a URL
+/**
+ * Helper function to create a MediaElement from a URL
+ * @param url - The media URL to wrap
+ * @returns MediaElement with a single source and no subtitles
+ */
 const createMediaElement = (url: string): MediaElement => ({
   src: [{ src: url, resolution: "" }],
   sub: [],
@@ -312,7 +316,7 @@ const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
           
           if (room.targetState.playlist.items.length === 1) {
             const firstItem = room.targetState.playlist.items[0]
-            if (firstItem.src[0]?.src === defaultMedia) {
+            if (firstItem?.src?.[0]?.src === defaultMedia) {
               // Remove the default item
               room.targetState.playlist.items = []
               log("Removed default media from playlist")

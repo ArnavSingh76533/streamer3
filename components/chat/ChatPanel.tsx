@@ -92,16 +92,21 @@ const ChatPanel: FC<Props> = ({ socket, className }) => {
             No messages yet. Be the first to say hello! 👋
           </div>
         ) : (
-          [...messages].reverse().map((m) => (
-            <div key={m.id} className="text-sm bg-dark-800/50 rounded-lg p-3 border border-dark-700/30">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-semibold text-primary-400">{m.name}</span>
-                <span className="text-dark-500 text-xs">•</span>
-                <span className="text-dark-500 text-xs">{new Date(m.ts).toLocaleTimeString()}</span>
+          // Render messages in reverse order without creating a new array
+          messages.map((_, idx) => {
+            const reverseIdx = messages.length - 1 - idx
+            const msg = messages[reverseIdx]
+            return (
+              <div key={msg.id} className="text-sm bg-dark-800/50 rounded-lg p-3 border border-dark-700/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-semibold text-primary-400">{msg.name}</span>
+                  <span className="text-dark-500 text-xs">•</span>
+                  <span className="text-dark-500 text-xs">{new Date(msg.ts).toLocaleTimeString()}</span>
+                </div>
+                <div className="break-words text-dark-200">{msg.text}</div>
               </div>
-              <div className="break-words text-dark-200">{m.text}</div>
-            </div>
-          ))
+            )
+          })
         )}
       </div>
       <div className="p-3 flex gap-2 bg-dark-800/50 border-t border-dark-700/50">
