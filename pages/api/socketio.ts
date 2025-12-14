@@ -25,6 +25,36 @@ const createMediaElement = (url: string): MediaElement => ({
   sub: [],
 })
 
+const ROOM_EMPTY_TTL_MS = 60_000
+const roomDeletionTimers = new Map<string, ReturnType<typeof setTimeout>>()
+
+const cancelRoomDeletion = (roomId: string) => {
+  const timer = roomDeletionTimers.get(roomId)
+  if (timer) {
+    clearTimeout(timer)
+    roomDeletionTimers.delete(roomId)
+  }
+}
+
+const scheduleRoomDeletion = (roomId: string, log: (...props: any[]) => void) => {
+  cancelRoomDeletion(roomId)
+  const timer = setTimeout(async () => {
+    try {
+      const room = await getRoom(roomId)
+      if (room && room.users.length === 0) {
+        await deleteRoom(roomId)
+        log("deleted empty room after grace period")
+      }
+    } catch (err) {
+      console.error("failed to delete room", roomId, err)
+    } finally {
+      roomDeletionTimers.delete(roomId)
+    }
+  }, ROOM_EMPTY_TTL_MS)
+
+  roomDeletionTimers.set(roomId, timer)
+}
+
 const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
   // @ts-ignore
   if (res.socket !== null && "server" in res.socket && !res.socket.server.io) {
@@ -80,6 +110,8 @@ const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
         if (!(await roomExists(roomId))) {
           await createNewRoom(roomId, socket.id)
           log("created room")
+        } else {
+          cancelRoomDeletion(roomId)
         }
 
         socket.join(roomId)
@@ -109,8 +141,7 @@ const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
             (user) => user.socketIds[0] !== socket.id
           )
           if (room.users.length === 0) {
-            await deleteRoom(roomId)
-            log("deleted empty room")
+            scheduleRoomDeletion(roomId, log)
           } else {
             if (room.ownerId === socket.id) {
               room.ownerId = room.users[0].uid

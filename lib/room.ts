@@ -26,6 +26,10 @@ export const createNewUser = async (roomId: string, socketId: string) => {
     name = getRandomName()
   }
 
+  if (users.length === 0) {
+    room.ownerId = socketId
+  }
+
   room.users.push({
     avatar: "",
     name,
