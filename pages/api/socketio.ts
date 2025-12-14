@@ -30,9 +30,8 @@ type RoomLogger = (...props: Parameters<typeof console.log>) => void
 const ROOM_EMPTY_TTL_MS = 60_000
 const roomDeletionTimers = new Map<
   string,
-  { timer: ReturnType<typeof setTimeout>; token: number }
+  { timer: ReturnType<typeof setTimeout>; token: symbol }
 >()
-let roomDeletionToken = 0
 
 const cancelRoomDeletion = (roomId: string) => {
   const entry = roomDeletionTimers.get(roomId)
@@ -44,15 +43,21 @@ const cancelRoomDeletion = (roomId: string) => {
 
 const scheduleRoomDeletion = (roomId: string, log: RoomLogger) => {
   cancelRoomDeletion(roomId)
-  const token = ++roomDeletionToken
+  const token = Symbol(roomId)
   const timer = setTimeout(async () => {
-    const isCurrentTimer = () => roomDeletionTimers.get(roomId)?.token === token
     try {
-      if (!isCurrentTimer()) {
+      const activeBefore = roomDeletionTimers.get(roomId)
+      if (!activeBefore || activeBefore.token !== token) {
         return
       }
       const room = await getRoom(roomId)
-      if (!isCurrentTimer() || room === null || room.users.length !== 0) {
+      const activeAfter = roomDeletionTimers.get(roomId)
+      if (
+        !activeAfter ||
+        activeAfter.token !== token ||
+        room === null ||
+        room.users.length !== 0
+      ) {
         return
       }
       await deleteRoom(roomId)
