@@ -9,8 +9,11 @@ export default async function publicRooms(
     const allRoomIds = await listRooms()
     const publicRoomsData = []
 
-    for (const roomId of allRoomIds) {
-      const room = await getRoom(roomId)
+    // Fetch all rooms in parallel for better performance
+    const roomPromises = allRoomIds.map(roomId => getRoom(roomId))
+    const rooms = await Promise.all(roomPromises)
+
+    for (const room of rooms) {
       if (room && room.isPublic) {
         publicRoomsData.push({
           id: room.id,

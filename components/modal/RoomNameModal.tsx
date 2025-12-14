@@ -32,7 +32,8 @@ const RoomNameModal: FC<Props> = ({ show, onSubmit }) => {
       title="Welcome! Set up your room" 
       show={show} 
       close={() => {
-        // Prevent closing without submitting
+        // Intentionally empty - prevent closing without submitting room setup
+        // Room creators must provide a name and visibility setting
       }}
     >
       <div className="flex flex-col gap-4">

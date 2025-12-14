@@ -39,19 +39,23 @@ const Room: FC<Props> = ({ id }) => {
         setConnected(socket.connected)
       } else {
         const newSocket = createClientSocket(id)
-        newSocket.on("connect", () => {
+        
+        const handleConnect = () => {
           setConnected(true)
-        })
+        }
         
         // Check if user is owner and room needs setup
-        newSocket.on("update", (room) => {
+        const handleUpdate = (room: any) => {
           const isRoomOwner = newSocket.id === room.ownerId
           
           // Show modal if owner and no room name set
           if (isRoomOwner && !room.ownerName && !hasSetName) {
             setShowNameModal(true)
           }
-        })
+        }
+        
+        newSocket.on("connect", handleConnect)
+        newSocket.on("update", handleUpdate)
         
         setSocket(newSocket)
       }
@@ -59,6 +63,8 @@ const Room: FC<Props> = ({ id }) => {
 
     return () => {
       if (socket !== null) {
+        socket.off("connect")
+        socket.off("update")
         socket.disconnect()
       }
     }
