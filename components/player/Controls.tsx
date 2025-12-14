@@ -1,8 +1,6 @@
 import React, { FC, useState } from "react"
 import { MediaOption, PlayerState, Subtitle } from "../../lib/types"
 import InteractionHandler from "../action/InteractionHandler"
-import IconBigPause from "../icon/IconBigPause"
-import IconBigPlay from "../icon/IconBigPlay"
 import classNames from "classnames"
 import InputSlider from "../input/InputSlider"
 import IconPlay from "../icon/IconPlay"
@@ -167,7 +165,7 @@ const Controls: FC<Props> = ({
             showControlsAction(!touch)
           }}
         >
-          {paused ? <IconBigPlay /> : <IconBigPause />}
+          {/* Removed big pause/play icons to avoid confusion - clicking video doesn't pause */}
         </InteractionHandler>
 
         <InputSlider

@@ -19,11 +19,13 @@ import RoomNameModal from "./modal/RoomNameModal"
 
 interface Props {
   id: string
+  initialName?: string
+  initialIsPublic?: boolean
 }
 
 let connecting = false
 
-const Room: FC<Props> = ({ id }) => {
+const Room: FC<Props> = ({ id, initialName, initialIsPublic }) => {
   const [connected, setConnected] = useState(false)
   const [socket, setSocket] = useState<Socket<
     ServerToClientEvents,
@@ -42,14 +44,22 @@ const Room: FC<Props> = ({ id }) => {
         
         const handleConnect = () => {
           setConnected(true)
+          
+          // If we have initial name/visibility from query params, set them immediately
+          if (initialName && !hasSetName) {
+            console.log("Setting initial room name and visibility:", initialName, initialIsPublic)
+            newSocket.emit("setRoomName", initialName)
+            newSocket.emit("setRoomPublic", initialIsPublic || false)
+            setHasSetName(true)
+          }
         }
         
         // Check if user is owner and room needs setup
         const handleUpdate = (room: any) => {
           const isRoomOwner = newSocket.id === room.ownerId
           
-          // Show modal if owner and no room name set
-          if (isRoomOwner && !room.ownerName && !hasSetName) {
+          // Show modal if owner and no room name set (and no initial name provided)
+          if (isRoomOwner && !room.ownerName && !hasSetName && !initialName) {
             setShowNameModal(true)
           }
         }
@@ -68,7 +78,7 @@ const Room: FC<Props> = ({ id }) => {
         socket.disconnect()
       }
     }
-  }, [id, socket, hasSetName])
+  }, [id, socket, hasSetName, initialName, initialIsPublic])
 
   const handleRoomSetup = (name: string, isPublic: boolean) => {
     if (socket) {

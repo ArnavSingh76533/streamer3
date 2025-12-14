@@ -2,7 +2,15 @@ import Room from "../../components/Room"
 import { GetServerSideProps } from "next"
 import Layout from "../../components/Layout"
 
-export default function RoomPage({ roomId }: { roomId: string }) {
+export default function RoomPage({ 
+  roomId, 
+  initialName, 
+  initialIsPublic 
+}: { 
+  roomId: string
+  initialName?: string
+  initialIsPublic?: boolean
+}) {
   return (
     <Layout
       meta={{
@@ -11,12 +19,12 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       }}
       roomId={roomId}
     >
-      <Room id={roomId} />
+      <Room id={roomId} initialName={initialName} initialIsPublic={initialIsPublic} />
     </Layout>
   )
 }
 
-export const getServerSideProps: GetServerSideProps = async ({ params }) => {
+export const getServerSideProps: GetServerSideProps = async ({ params, query }) => {
   const roomId = params?.id
 
   // force min length of 4
@@ -26,9 +34,15 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
     }
   }
 
+  // Extract name and isPublic from query params if present
+  const initialName = typeof query.name === "string" ? query.name : undefined
+  const initialIsPublic = query.isPublic === "true"
+
   return {
     props: {
       roomId,
+      initialName,
+      initialIsPublic,
     },
   }
 }

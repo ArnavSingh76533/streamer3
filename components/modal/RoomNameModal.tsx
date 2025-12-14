@@ -7,9 +7,10 @@ import Button from "../action/Button"
 interface Props {
   show: boolean
   onSubmit: (name: string, isPublic: boolean) => void
+  allowClose?: boolean // Allow closing the modal without submitting
 }
 
-const RoomNameModal: FC<Props> = ({ show, onSubmit }) => {
+const RoomNameModal: FC<Props> = ({ show, onSubmit, allowClose = false }) => {
   const [name, setName] = useState("")
   const [isPublic, setIsPublic] = useState(false)
   const [error, setError] = useState("")
@@ -25,15 +26,24 @@ const RoomNameModal: FC<Props> = ({ show, onSubmit }) => {
       return
     }
     onSubmit(trimmedName, isPublic)
+    // Reset form after submission
+    setName("")
+    setError("")
+    setIsPublic(false)
   }
 
   return (
     <Modal 
       title="Welcome! Set up your room" 
       show={show} 
+      hideCloseButtons={!allowClose}
       close={() => {
-        // Intentionally empty - prevent closing without submitting room setup
-        // Room creators must provide a name and visibility setting
+        if (allowClose) {
+          // Reset form when closing
+          setName("")
+          setError("")
+          setIsPublic(false)
+        }
       }}
     >
       <div className="flex flex-col gap-4">
