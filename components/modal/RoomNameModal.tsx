@@ -96,6 +96,7 @@ const RoomNameModal: FC<Props> = ({ show, onSubmit }) => {
         </div>
 
         <Button
+          tooltip="Create Room"
           className="w-full px-4 py-2.5 font-medium mt-2"
           actionClasses="bg-primary-600 hover:bg-primary-700 active:bg-primary-800 shadow-lg hover:shadow-xl"
           onClick={handleSubmit}

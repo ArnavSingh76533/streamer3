@@ -31,7 +31,6 @@ const Room: FC<Props> = ({ id }) => {
   > | null>(null)
   const [url, setUrl] = useState("")
   const [showNameModal, setShowNameModal] = useState(false)
-  const [isOwner, setIsOwner] = useState(false)
   const [hasSetName, setHasSetName] = useState(false)
 
   useEffect(() => {
@@ -47,7 +46,6 @@ const Room: FC<Props> = ({ id }) => {
         // Check if user is owner and room needs setup
         newSocket.on("update", (room) => {
           const isRoomOwner = newSocket.id === room.ownerId
-          setIsOwner(isRoomOwner)
           
           // Show modal if owner and no room name set
           if (isRoomOwner && !room.ownerName && !hasSetName) {
