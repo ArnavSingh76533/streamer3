@@ -267,11 +267,13 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
       <ReactPlayer
         style={{
           maxHeight: fullscreen || fullHeight ? "100vh" : "calc(100vh - 210px)",
-          visibility: musicMode ? "hidden" : "visible",
-          height: musicMode ? "0px" : (fullscreen || fullHeight ? "100vh" : "calc((9 / 16) * 100vw)"),
+          position: musicMode ? "absolute" : "relative",
+          opacity: musicMode ? 0 : 1,
+          pointerEvents: musicMode ? "none" : "auto",
+          height: musicMode ? "1px" : (fullscreen || fullHeight ? "100vh" : "calc((9 / 16) * 100vw)"),
         }}
         ref={player}
-        width={"100%"}
+        width={musicMode ? "1px" : "100%"}
         height={fullscreen || fullHeight ? "100vh" : "calc((9 / 16) * 100vw)"}
         config={{
           youtube: {
