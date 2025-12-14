@@ -232,7 +232,7 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
         _setPlaylist(update.playlist)
       }
     })
-  }, [socket])
+  }, [socket, ownerId])
 
   useEffect(() => {
     if (ready) {
