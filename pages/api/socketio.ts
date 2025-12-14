@@ -42,9 +42,6 @@ const scheduleRoomDeletion = (roomId: string, log: RoomLogger) => {
   cancelRoomDeletion(roomId)
   const timer = setTimeout(async () => {
     try {
-      if (roomDeletionTimers.get(roomId) !== timer) {
-        return
-      }
       const room = await getRoom(roomId)
       if (
         roomDeletionTimers.get(roomId) !== timer ||

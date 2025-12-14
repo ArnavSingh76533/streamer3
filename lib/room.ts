@@ -51,7 +51,10 @@ export const createNewUser = async (roomId: string, socketId: string) => {
 
   room.users.push(newUser)
 
-  if (wasEmpty || !users.some((user) => user.uid === room.ownerId)) {
+  const shouldReassignOwnership =
+    wasEmpty || !users.some((user) => user.uid === room.ownerId)
+
+  if (shouldReassignOwnership) {
     room.ownerId = newUser.uid
   }
 
