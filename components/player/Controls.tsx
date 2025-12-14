@@ -92,13 +92,8 @@ const Controls: FC<Props> = ({
       if (new Date().getTime() - interactionTime > 350) {
         if (interaction && !doubleClick) {
           doubleClick = false
-          if (isOwner) {
-            if (playEnded()) {
-              playAgain()
-            } else {
-              setPaused(!paused)
-            }
-          }
+          // Removed pause/play toggle from video click area
+          // Only the pause button should trigger pause/play
         }
 
         interaction = false

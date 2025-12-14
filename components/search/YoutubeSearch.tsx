@@ -102,12 +102,29 @@ const YoutubeSearch: FC<Props> = ({ socket }) => {
     setLoading(false)
   }
 
+  const clearResults = () => {
+    setResults([])
+    setError(null)
+    setQ("")
+  }
+
   const playNow = (url: string) => socket?.emit("playUrl", url)
   const addToPlaylist = (url: string) => socket?.emit("addToPlaylist", url)
 
   return (
     <div className="flex flex-col gap-3 bg-dark-900 border border-dark-700/50 rounded-xl p-4 shadow-lg">
-      <h3 className="text-lg font-semibold text-primary-400 mb-1">YouTube Search</h3>
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="text-lg font-semibold text-primary-400">YouTube Search</h3>
+        {results.length > 0 && (
+          <button
+            onClick={clearResults}
+            className="text-dark-400 hover:text-dark-200 transition-colors duration-200 text-sm font-medium"
+            title="Clear search results"
+          >
+            Clear Results
+          </button>
+        )}
+      </div>
       
       {/* Search row: input + Search button with fixed width so actions align below */}
       <div className="grid grid-cols-[1fr_auto] gap-2">
