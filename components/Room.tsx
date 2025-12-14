@@ -33,6 +33,7 @@ const Room: FC<Props> = ({ id }) => {
   const [showNameModal, setShowNameModal] = useState(false)
   const [hasSetName, setHasSetName] = useState(false)
   const [roomSetupChecked, setRoomSetupChecked] = useState(false)
+  const [pendingSetup, setPendingSetup] = useState<{ name: string; isPublic: boolean } | null>(null)
 
   useEffect(() => {
     fetch("/api/socketio").finally(() => {
@@ -52,10 +53,8 @@ const Room: FC<Props> = ({ id }) => {
             if (setupData) {
               try {
                 const { name, isPublic } = JSON.parse(setupData)
-                // Set room name and privacy immediately after connection
-                newSocket.emit("setRoomName", name)
-                newSocket.emit("setRoomPublic", isPublic)
-                setHasSetName(true)
+                // Store pending setup to be applied on first update
+                setPendingSetup({ name, isPublic })
                 // Clear the setup data
                 sessionStorage.removeItem(setupKey)
               } catch (e) {
@@ -70,8 +69,14 @@ const Room: FC<Props> = ({ id }) => {
         const handleUpdate = (room: any) => {
           const isRoomOwner = newSocket.id === room.ownerId
           
-          // Show modal if owner and no room name set (and no setup from sessionStorage)
-          if (isRoomOwner && !room.ownerName && !hasSetName && roomSetupChecked) {
+          // If we have pending setup and we're the owner, apply it now
+          if (pendingSetup && isRoomOwner && !hasSetName) {
+            newSocket.emit("setRoomName", pendingSetup.name)
+            newSocket.emit("setRoomPublic", pendingSetup.isPublic)
+            setHasSetName(true)
+            setPendingSetup(null)
+          } else if (isRoomOwner && !room.ownerName && !hasSetName && roomSetupChecked && !pendingSetup) {
+            // Show modal if owner and no room name set (and no setup from sessionStorage)
             setShowNameModal(true)
           }
         }
@@ -90,7 +95,7 @@ const Room: FC<Props> = ({ id }) => {
         socket.disconnect()
       }
     }
-  }, [id, socket, hasSetName, roomSetupChecked])
+  }, [id, socket, hasSetName, roomSetupChecked, pendingSetup])
 
   const handleRoomSetup = (name: string, isPublic: boolean) => {
     if (socket) {
