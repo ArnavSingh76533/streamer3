@@ -26,7 +26,7 @@ export const createNewUser = async (roomId: string, socketId: string) => {
     name = getRandomName()
   }
 
-  if (users.length === 0) {
+  if (users.length === 0 || !users.some((user) => user.uid === room.ownerId)) {
     room.ownerId = socketId
   }
 

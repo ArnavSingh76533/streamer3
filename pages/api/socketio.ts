@@ -25,6 +25,8 @@ const createMediaElement = (url: string): MediaElement => ({
   sub: [],
 })
 
+type RoomLogger = (...props: unknown[]) => void
+
 const ROOM_EMPTY_TTL_MS = 60_000
 const roomDeletionTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
@@ -36,7 +38,7 @@ const cancelRoomDeletion = (roomId: string) => {
   }
 }
 
-const scheduleRoomDeletion = (roomId: string, log: (...props: any[]) => void) => {
+const scheduleRoomDeletion = (roomId: string, log: RoomLogger) => {
   cancelRoomDeletion(roomId)
   const timer = setTimeout(async () => {
     try {
@@ -99,7 +101,7 @@ const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
         }
 
         const roomId = socket.handshake.query.roomId.toLowerCase()
-        const log = (...props: any[]) => {
+        const log: RoomLogger = (...props) => {
           console.log(
             "[" + new Date().toUTCString() + "][room " + roomId + "]",
             socket.id,
