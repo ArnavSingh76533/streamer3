@@ -21,7 +21,7 @@ const ControlButton: FC<Props> = ({
     <InteractionHandler
       tooltip={tooltip}
       className={classNames(
-        "action cursor-pointer rounded p-2 select-none",
+        "action cursor-pointer rounded-lg p-2.5 select-none transition-all duration-200",
         className
       )}
       onClick={(e, touch) => {

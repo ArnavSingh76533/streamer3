@@ -9,10 +9,10 @@ interface Props {
 const InputClipboardCopy: FC<Props> = ({ value, className }) => {
   return (
     <div
-      className={"rounded flex flex-row items-center bg-dark-900 " + className}
+      className={"rounded-lg flex flex-row items-center bg-dark-900 border border-dark-700/50 overflow-hidden " + className}
     >
       <input
-        className={"rounded grow bg-dark-900 p-2 " + className}
+        className={"rounded-l-lg grow bg-transparent p-3 outline-none " + className}
         value={value}
         type={"text"}
         readOnly={true}
@@ -23,7 +23,7 @@ const InputClipboardCopy: FC<Props> = ({ value, className }) => {
       />
       <button
         className={
-          "p-2 bg-primary-900 hover:bg-primary-800 active:bg-primary-700 flex flex-row items-center rounded-r cursor-copy"
+          "px-4 py-3 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 flex flex-row items-center gap-2 cursor-copy font-medium transition-all duration-200"
         }
         data-tooltip-content={"Click to copy"}
         type={"button"}

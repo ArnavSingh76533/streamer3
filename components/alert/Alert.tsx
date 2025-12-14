@@ -22,13 +22,17 @@ const Alert: FC<AlertProps> = ({
   return (
     <div
       className={classNames(
-        "rounded bg-dark-800 p-2 flex gap-1 items-center flex-row justify-between",
+        "rounded-lg bg-dark-800/90 backdrop-blur-sm border border-dark-700/50 p-3 flex gap-2 items-center flex-row justify-between shadow-lg",
         className
       )}
     >
-      <div className={"flex flex-row gap-1 items-center"}>{children}</div>
+      <div className={"flex flex-row gap-2 items-center"}>{children}</div>
       {canClose && (
-        <Button tooltip={"Dismiss"} onClick={() => setClosed(true)}>
+        <Button 
+          tooltip={"Dismiss"} 
+          onClick={() => setClosed(true)}
+          actionClasses="hover:bg-dark-700 active:bg-dark-600"
+        >
           <IconClose />
         </Button>
       )}

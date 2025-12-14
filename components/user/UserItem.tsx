@@ -31,11 +31,11 @@ const UserItem: FC<Props> = ({ user, ownerId, socketId, updateName }) => {
   return (
     <div
       className={classNames(
-        "rounded border-l-4",
-        "flex flex-row bg-dark-900 hover:bg-dark-800",
+        "rounded-lg border-l-4 overflow-hidden transition-all duration-200",
+        "flex flex-row bg-dark-800/50 hover:bg-dark-800 shadow-md",
         socketId == user.uid
-          ? "border-primary-900 hover:border-primary-800"
-          : "border-dark-900 hover:border-dark-600"
+          ? "border-primary-600 hover:border-primary-500"
+          : "border-dark-700 hover:border-dark-600"
       )}
     >
       {ownerId == user.uid && (
@@ -43,7 +43,7 @@ const UserItem: FC<Props> = ({ user, ownerId, socketId, updateName }) => {
           className={"absolute inline-flex -ml-4 -mt-4 p-2 cursor-help"}
           data-tooltip-content={"Owner of the lobby"}
         >
-          <IconOwner className={"text-primary-700"} sizeClassName={"w-5 h-5"} />
+          <IconOwner className={"text-primary-500"} sizeClassName={"w-5 h-5"} />
         </div>
       )}
       <div className={"aspect-square shrink-0"}>
@@ -57,7 +57,7 @@ const UserItem: FC<Props> = ({ user, ownerId, socketId, updateName }) => {
         />
       </div>
       <div
-        className={"p-2 pl-1 grow"}
+        className={"p-2 pl-2 grow"}
         onMouseEnter={() => {
           if (user.uid === socketId) {
             setEdit(true)
@@ -78,12 +78,12 @@ const UserItem: FC<Props> = ({ user, ownerId, socketId, updateName }) => {
           />
         ) : (
           <>
-            <div className={"flex flex-row gap-1 truncate"}>{user.name}</div>
-            <div className={"flex flex-row gap-1 items-center"}>
+            <div className={"flex flex-row gap-1 truncate font-medium text-dark-200"}>{user.name}</div>
+            <div className={"flex flex-row gap-1.5 items-center text-dark-400 text-sm"}>
               {user.player.paused ? (
                 <IconPause sizeClassName={"w-3 h-3"} />
               ) : (
-                <IconPlay sizeClassName={"w-3 h-3"} />
+                <IconPlay sizeClassName={"w-3 h-3 text-primary-500"} />
               )}
               {secondsToTime(user.player.progress)}
             </div>
