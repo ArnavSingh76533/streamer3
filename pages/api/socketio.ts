@@ -398,6 +398,42 @@ const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
             console.error("chatMessage failed:", e)
           }
         })
+
+        // Room management events
+        socket.on("setRoomName", async (name: string) => {
+          try {
+            const room = await getRoom(roomId)
+            if (room === null) return
+            
+            // Only owner can set room name
+            if (room.ownerId !== socket.id) return
+            
+            const trimmedName = (name || "").toString().trim()
+            if (!trimmedName || trimmedName.length > 50) return
+            
+            room.ownerName = trimmedName
+            await broadcast(room)
+            log("set room name to", trimmedName)
+          } catch (e) {
+            console.error("setRoomName failed:", e)
+          }
+        })
+
+        socket.on("setRoomPublic", async (isPublic: boolean) => {
+          try {
+            const room = await getRoom(roomId)
+            if (room === null) return
+            
+            // Only owner can set room visibility
+            if (room.ownerId !== socket.id) return
+            
+            room.isPublic = isPublic
+            await broadcast(room)
+            log("set room public to", isPublic)
+          } catch (e) {
+            console.error("setRoomPublic failed:", e)
+          }
+        })
         // =======================
       }
     )
