@@ -42,11 +42,19 @@ const scheduleRoomDeletion = (roomId: string, log: RoomLogger) => {
   cancelRoomDeletion(roomId)
   const timer = setTimeout(async () => {
     try {
-      const room = await getRoom(roomId)
-      if (room && room.users.length === 0) {
-        await deleteRoom(roomId)
-        log("deleted empty room after grace period")
+      if (roomDeletionTimers.get(roomId) !== timer) {
+        return
       }
+      const room = await getRoom(roomId)
+      if (
+        roomDeletionTimers.get(roomId) !== timer ||
+        room === null ||
+        room.users.length !== 0
+      ) {
+        return
+      }
+      await deleteRoom(roomId)
+      log("deleted empty room after grace period")
     } catch (err) {
       console.error("failed to delete room", roomId, err)
     } finally {
