@@ -21,12 +21,13 @@ export const createNewUser = async (roomId: string, socketId: string) => {
   }
 
   const users = room.users
+  const wasEmpty = users.length === 0
   let name = getRandomName()
   while (users.some((user) => user.name === name)) {
     name = getRandomName()
   }
 
-  room.users.push({
+  const newUser = {
     avatar: "",
     name,
     player: {
@@ -46,7 +47,19 @@ export const createNewUser = async (roomId: string, socketId: string) => {
     } as unknown as PlayerState,
     socketIds: [socketId],
     uid: socketId,
-  })
+  }
+
+  room.users.push(newUser)
+
+  const hasValidOwner =
+    room.ownerId !== undefined &&
+    room.users.some((user) => user.uid === room.ownerId)
+
+  const shouldReassignOwnership = wasEmpty || !hasValidOwner
+
+  if (shouldReassignOwnership) {
+    room.ownerId = newUser.uid
+  }
 
   await setRoom(roomId, room)
 }

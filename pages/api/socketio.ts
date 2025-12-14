@@ -25,6 +25,54 @@ const createMediaElement = (url: string): MediaElement => ({
   sub: [],
 })
 
+type RoomLogger = (...props: Parameters<typeof console.log>) => void
+
+const ROOM_EMPTY_TTL_MS = 60_000 // 1 minute grace period before deleting empty rooms
+const roomDeletionTimers = new Map<
+  string,
+  { timer: ReturnType<typeof setTimeout>; token: symbol }
+>()
+
+const cancelRoomDeletion = (roomId: string) => {
+  const entry = roomDeletionTimers.get(roomId)
+  if (entry) {
+    clearTimeout(entry.timer)
+    roomDeletionTimers.delete(roomId)
+  }
+}
+
+const scheduleRoomDeletion = (roomId: string, log: RoomLogger) => {
+  cancelRoomDeletion(roomId)
+  const token = Symbol(roomId)
+  const timer = setTimeout(async () => {
+    const hasMatchingToken = () => roomDeletionTimers.get(roomId)?.token === token
+    try {
+      if (!hasMatchingToken()) {
+        return
+      }
+      const room = await getRoom(roomId)
+      if (
+        !hasMatchingToken() ||
+        room === null ||
+        room.users.length !== 0
+      ) {
+        return
+      }
+      await deleteRoom(roomId)
+      log("deleted empty room after grace period")
+    } catch (err) {
+      console.error("failed to delete room", roomId, err)
+    } finally {
+      const entry = roomDeletionTimers.get(roomId)
+      if (entry?.token === token) {
+        roomDeletionTimers.delete(roomId)
+      }
+    }
+  }, ROOM_EMPTY_TTL_MS)
+
+  roomDeletionTimers.set(roomId, { timer, token })
+}
+
 const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
   // @ts-ignore
   if (res.socket !== null && "server" in res.socket && !res.socket.server.io) {
@@ -69,7 +117,7 @@ const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
         }
 
         const roomId = socket.handshake.query.roomId.toLowerCase()
-        const log = (...props: any[]) => {
+        const log: RoomLogger = (...props) => {
           console.log(
             "[" + new Date().toUTCString() + "][room " + roomId + "]",
             socket.id,
@@ -80,6 +128,8 @@ const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
         if (!(await roomExists(roomId))) {
           await createNewRoom(roomId, socket.id)
           log("created room")
+        } else {
+          cancelRoomDeletion(roomId)
         }
 
         socket.join(roomId)
@@ -109,8 +159,7 @@ const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
             (user) => user.socketIds[0] !== socket.id
           )
           if (room.users.length === 0) {
-            await deleteRoom(roomId)
-            log("deleted empty room")
+            scheduleRoomDeletion(roomId, log)
           } else {
             if (room.ownerId === socket.id) {
               room.ownerId = room.users[0].uid
