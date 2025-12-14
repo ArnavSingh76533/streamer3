@@ -39,11 +39,11 @@ export default function Index() {
         roomId.length >= 4 &&
         roomId.match(/^[a-z]{4,}$/)
       ) {
-        // Navigate to room with name and visibility as query params
-        await router.push({
-          pathname: `/room/${roomId}`,
-          query: { name, isPublic: isPublic.toString() }
-        })
+        // Store room setup info in sessionStorage to be picked up by Room component
+        sessionStorage.setItem(`room-setup-${roomId}`, JSON.stringify({ name, isPublic }))
+        
+        // Navigate to room
+        await router.push(`/room/${roomId}`)
       } else {
         throw Error("Invalid roomId generated: " + roomId)
       }
