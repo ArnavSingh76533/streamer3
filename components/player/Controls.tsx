@@ -140,7 +140,7 @@ const Controls: FC<Props> = ({
         tabIndex={1}
         onKey={(key) => {
           console.log("Key down", key)
-          if (key === " ") {
+          if (key === " " && isOwner) {
             setPaused(!paused)
           }
         }}

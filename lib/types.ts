@@ -77,6 +77,8 @@ export interface RoomState {
   serverTime: number
   id: string
   ownerId: string
+  ownerName?: string // Name provided by room creator
+  isPublic?: boolean // Whether room is public or private
   users: UserState[]
   targetState: TargetState
   commandHistory: CommandLog[]

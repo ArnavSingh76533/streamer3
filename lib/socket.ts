@@ -48,6 +48,10 @@ export interface ClientToServerEvents {
 
   // Chat
   chatMessage: (text: string) => void
+  
+  // Room management
+  setRoomName: (name: string) => void
+  setRoomPublic: (isPublic: boolean) => void
 }
 
 export type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>
