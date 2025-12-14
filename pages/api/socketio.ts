@@ -28,23 +28,32 @@ const createMediaElement = (url: string): MediaElement => ({
 type RoomLogger = (...props: unknown[]) => void
 
 const ROOM_EMPTY_TTL_MS = 60_000
-const roomDeletionTimers = new Map<string, ReturnType<typeof setTimeout>>()
+const roomDeletionTimers = new Map<
+  string,
+  { timer: ReturnType<typeof setTimeout>; token: number }
+>()
+let roomDeletionToken = 0
 
 const cancelRoomDeletion = (roomId: string) => {
-  const timer = roomDeletionTimers.get(roomId)
-  if (timer) {
-    clearTimeout(timer)
+  const entry = roomDeletionTimers.get(roomId)
+  if (entry) {
+    clearTimeout(entry.timer)
     roomDeletionTimers.delete(roomId)
   }
 }
 
 const scheduleRoomDeletion = (roomId: string, log: RoomLogger) => {
   cancelRoomDeletion(roomId)
+  const token = ++roomDeletionToken
   const timer = setTimeout(async () => {
     try {
+      const entry = roomDeletionTimers.get(roomId)
+      if (!entry || entry.token !== token) {
+        return
+      }
       const room = await getRoom(roomId)
       if (
-        roomDeletionTimers.get(roomId) !== timer ||
+        roomDeletionTimers.get(roomId)?.token !== token ||
         room === null ||
         room.users.length !== 0
       ) {
@@ -55,11 +64,14 @@ const scheduleRoomDeletion = (roomId: string, log: RoomLogger) => {
     } catch (err) {
       console.error("failed to delete room", roomId, err)
     } finally {
-      roomDeletionTimers.delete(roomId)
+      const entry = roomDeletionTimers.get(roomId)
+      if (entry?.token === token) {
+        roomDeletionTimers.delete(roomId)
+      }
     }
   }, ROOM_EMPTY_TTL_MS)
 
-  roomDeletionTimers.set(roomId, timer)
+  roomDeletionTimers.set(roomId, { timer, token })
 }
 
 const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
