@@ -5,6 +5,7 @@ import Button from "../components/action/Button"
 import { useRouter } from "next/router"
 import { Tooltip } from "react-tooltip"
 import useSWR from "swr"
+import RoomNameModal from "../components/modal/RoomNameModal"
 
 interface PublicRoom {
   id: string
@@ -23,11 +24,45 @@ export default function Index() {
     { refreshInterval: 5000 } // Refresh every 5 seconds
   )
   const [room, setRoom] = useState("")
+  const [showCreateRoomModal, setShowCreateRoomModal] = useState(false)
 
   const publicRooms = publicRoomsData?.rooms || []
 
+  const handleCreateRoom = async (name: string, isPublic: boolean) => {
+    try {
+      // Generate a room ID first
+      const response = await fetch("/api/generate")
+      const { roomId } = await response.json()
+      
+      if (
+        typeof roomId === "string" &&
+        roomId.length >= 4 &&
+        roomId.match(/^[a-z]{4,}$/)
+      ) {
+        // Navigate to room with name and visibility as query params
+        await router.push({
+          pathname: `/room/${roomId}`,
+          query: { name, isPublic: isPublic.toString() }
+        })
+      } else {
+        throw Error("Invalid roomId generated: " + roomId)
+      }
+    } catch (error) {
+      console.error("Failed to generate new roomId", error)
+    }
+  }
+
   return (
     <Layout meta={{ robots: "index, archive, follow" }} showNavbar={false}>
+      <RoomNameModal 
+        show={showCreateRoomModal} 
+        allowClose={true}
+        onSubmit={(name, isPublic) => {
+          setShowCreateRoomModal(false)
+          handleCreateRoom(name, isPublic)
+        }}
+        onClose={() => setShowCreateRoomModal(false)}
+      />
       <div className={"self-center flex justify-center items-center min-h-[70vh]"}>
         <div className="flex flex-col gap-6 max-w-4xl w-full m-8">
           {/* Main join/create form */}
@@ -66,23 +101,7 @@ export default function Index() {
                   "bg-accent-600 hover:bg-accent-700 active:bg-accent-800 shadow-lg hover:shadow-xl"
                 }
                 onClick={() => {
-                  fetch("/api/generate")
-                    .then((r) => r.json())
-                    .then(async ({ roomId }) => {
-                      if (
-                        typeof roomId === "string" &&
-                        roomId.length >= 4 &&
-                        roomId.match(/^[a-z]{4,}$/)
-                      ) {
-                        console.log("Generated new roomId:", roomId)
-                        await router.push("/room/" + roomId)
-                      } else {
-                        throw Error("Invalid roomId generated: " + roomId)
-                      }
-                    })
-                    .catch((error) => {
-                      console.error("Failed to generate new roomId", error)
-                    })
+                  setShowCreateRoomModal(true)
                 }}
               >
                 Generate room

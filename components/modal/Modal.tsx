@@ -8,9 +8,10 @@ interface Props {
   show: boolean
   close: () => void
   children?: ReactNode
+  hideCloseButtons?: boolean // Optional: hide the close buttons
 }
 
-const Modal: FC<Props> = ({ title, show, close, children }) => {
+const Modal: FC<Props> = ({ title, show, close, children, hideCloseButtons = false }) => {
   if (!show) {
     return <></>
   }
@@ -19,14 +20,18 @@ const Modal: FC<Props> = ({ title, show, close, children }) => {
     <div className={"absolute top-0 left-0 h-full w-full z-40"}>
       <div
         onMouseDownCapture={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          close()
+          if (!hideCloseButtons) {
+            e.preventDefault()
+            e.stopPropagation()
+            close()
+          }
         }}
         onTouchStartCapture={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          close()
+          if (!hideCloseButtons) {
+            e.preventDefault()
+            e.stopPropagation()
+            close()
+          }
         }}
         className={"absolute top-0 left-0 h-full w-full bg-black/60 backdrop-blur-sm"}
       />
@@ -40,31 +45,35 @@ const Modal: FC<Props> = ({ title, show, close, children }) => {
             <div className={"px-2"}>
               <h2 className={"text-xl font-semibold text-primary-400"}>{title}</h2>
             </div>
-            <Button 
-              tooltip={"Close modal"} 
-              id={"closeModal1"} 
-              onClick={close}
-              actionClasses={"hover:bg-dark-700 active:bg-dark-600"}
-            >
-              <IconClose />
-            </Button>
+            {!hideCloseButtons && (
+              <Button 
+                tooltip={"Close modal"} 
+                id={"closeModal1"} 
+                onClick={close}
+                actionClasses={"hover:bg-dark-700 active:bg-dark-600"}
+              >
+                <IconClose />
+              </Button>
+            )}
           </div>
           <div className={"p-6"}>{children}</div>
-          <div
-            className={
-              "flex justify-end items-center p-4 border-t border-dark-700/50"
-            }
-          >
-            <Button
-              tooltip={"Close modal"}
-              id={"closeModal2"}
-              className={"px-4 py-2"}
-              actionClasses={"bg-dark-700 hover:bg-dark-600 active:bg-dark-500"}
-              onClick={close}
+          {!hideCloseButtons && (
+            <div
+              className={
+                "flex justify-end items-center p-4 border-t border-dark-700/50"
+              }
             >
-              Close
-            </Button>
-          </div>
+              <Button
+                tooltip={"Close modal"}
+                id={"closeModal2"}
+                className={"px-4 py-2"}
+                actionClasses={"bg-dark-700 hover:bg-dark-600 active:bg-dark-500"}
+                onClick={close}
+              >
+                Close
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
